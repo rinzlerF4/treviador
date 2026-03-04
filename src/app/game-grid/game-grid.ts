@@ -2,7 +2,6 @@ import { Component, signal } from '@angular/core';
 import { GameCell } from '../game-cell/game-cell';
 import { QUESTIONS, Question } from '../data/questions';
 import { QuestionModal } from '../question-modal/question-modal';
-import { NgIf, NgFor } from '@angular/common';
 
 /**
  * GameGridComponent - The main game grid container
@@ -23,7 +22,7 @@ import { NgIf, NgFor } from '@angular/common';
 
 @Component({
   selector: 'app-game-grid',
-  imports: [GameCell, QuestionModal, NgIf, NgFor],
+  imports: [GameCell, QuestionModal],
   templateUrl: './game-grid.html',
   styleUrl: './game-grid.css',
 })

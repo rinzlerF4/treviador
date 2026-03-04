@@ -1,5 +1,4 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { NgIf, NgFor } from '@angular/common';
 
 /**
  * GameCellComponent - A single cell in the game grid
@@ -17,7 +16,7 @@ import { NgIf, NgFor } from '@angular/common';
 
 @Component({
   selector: 'app-game-cell',
-  imports: [NgIf, NgFor],
+  imports: [],
   templateUrl: './game-cell.html',
   styleUrl: './game-cell.css',
 })
