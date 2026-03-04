@@ -26,3 +26,59 @@
   padding: 8px 16px;
   cursor: pointer;
 }
+
+ul {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  list-style: none;
+  padding: 0; /* часто добавляют, чтобы убрать отступ слева */
+  margin: 0; /* если нужно убрать стандартный отступ браузера */
+}
+
+.modal button {
+  display: block;
+  margin: 10px auto;
+  padding: 8px 16px;
+  cursor: pointer;
+  border: 2px solid #ccc;
+  border-radius: 6px;
+  background: white;
+  font-size: 14px;
+  transition: background 0.2s ease;
+  width: 100%;
+}
+
+.modal button.correct {
+  background-color: #4caf50;
+  border-color: #45a049;
+  color: white;
+}
+
+.modal button.wrong {
+  animation: wrongPulse 0.9s ease;
+}
+
+@keyframes wrongPulse {
+  0% {
+    background-color: white;
+  }
+  20% {
+    background-color: #f44336;
+    color: white;
+  }
+  40% {
+    background-color: white;
+  }
+  60% {
+    background-color: #f44336;
+    color: white;
+  }
+  80% {
+    background-color: white;
+  }
+  100% {
+    background-color: #f44336;
+    color: white;
+  }
+}

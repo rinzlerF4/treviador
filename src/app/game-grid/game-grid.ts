@@ -120,16 +120,14 @@ export class GameGrid {
     // Если правильный — захватываем клетку
     if (answerIndex === this.currentQuestion.correctIndex) {
       this.captureCell(this.pendingCellId);
-    } else {
-      alert(
-        `Неправильно! Правильный ответ: ${this.currentQuestion.options[this.currentQuestion.correctIndex]}`,
-      );
     }
 
     // Помечаем вопрос как использованный
     this.usedQuestionIds.set([...this.usedQuestionIds(), this.currentQuestion.id]);
 
     // Сбрасываем модалку
+    this.usedQuestionIds.set([...this.usedQuestionIds(), this.currentQuestion.id]);
+
     this.currentQuestion = null;
     this.modalVisible = false;
     this.pendingCellId = null;

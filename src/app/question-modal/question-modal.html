@@ -1,10 +1,16 @@
-<div class="modal-backdrop" *ngIf="visible">
-  <div class="modal">
-    <h3>{{ question?.text }}</h3>
-    <ul>
-      <li *ngFor="let opt of question?.options; let i = index">
-        <button (click)="selectOption(i)">{{ opt }}</button>
-      </li>
-    </ul>
+@if (visible) {
+  <div class="modal-backdrop">
+    <div class="modal">
+      <h3>{{ question?.text }}</h3>
+      <ul>
+        @for (opt of question?.options ?? []; track $index) {
+          <li>
+            <button [class]="getButtonClass($index)" (click)="selectOption($index)">
+              {{ opt }}
+            </button>
+          </li>
+        }
+      </ul>
+    </div>
   </div>
-</div>
+}
