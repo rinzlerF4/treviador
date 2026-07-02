@@ -22,6 +22,11 @@ export class PusherService {
       this.pusher = new Pusher('69bc9629d7ee161329fd', {
         cluster: 'eu',
         authEndpoint: '/api/auth',
+        auth: {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
       });
 
       const channelName = `presence-triviador-${roomId}`;
