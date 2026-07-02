@@ -79,11 +79,19 @@ export class GameStateService {
 
   private setupSocketListeners() {
     this.pusher.onEvent.subscribe(event => {
-      // Слушаем события от другого игрока
       if (event.type === 'sync-state') {
         this.applyState(event.data);
       }
+      if (event.type === 'request-state') {
+        // Если мы уже в игре, отправляем свое состояние новичку
+        this.sync();
+      }
     });
+
+    // При входе просим актуальное состояние
+    setTimeout(() => {
+      this.pusher.sendAction('request-state', {});
+    }, 1000);
   }
 
   private applyState(data: any) {

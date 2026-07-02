@@ -17,17 +17,19 @@ export class PusherService {
     }
 
     this.pusher = new Pusher('69bc9629d7ee161329fd', {
-      cluster: 'eu'
+      cluster: 'eu',
+      authEndpoint: '/api/auth' // Путь к нашей функции авторизации
     });
 
-    this.channel = this.pusher.subscribe(`triviador-game-${roomId}`);
+    this.channel = this.pusher.subscribe(`private-triviador-${roomId}`);
 
-    this.channel.bind('client-game-event', (data: any) => {
-      this.onEvent.next(data);
+    this.channel.bind('client-sync-state', (data: any) => {
+      this.onEvent.next({ type: 'sync-state', data });
     });
   }
 
   sendAction(type: string, data: any) {
-    this.channel.trigger('client-game-event', { type, data });
+    // В приватных каналах события ДОЛЖНЫ начинаться с client-
+    this.channel.trigger('client-sync-state', data);
   }
 }
