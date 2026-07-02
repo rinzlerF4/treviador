@@ -1,7 +1,6 @@
 import { Injectable, signal } from '@angular/core';
-import * as Pusher from 'pusher-js';
-import { Subject } from 'rxjs';
-@Injectable({ providedIn: 'root' })
+import Pusher from 'pusher-js';
+import { Subject } from 'rxjs';@Injectable({ providedIn: 'root' })
 export class PusherService {
   private pusher: Pusher;
   private channel: any;
@@ -17,11 +16,10 @@ export class PusherService {
       window.history.replaceState({}, '', `?room=${roomId}`);
     }
 
-    this.pusher = new (Pusher as any)('69bc9629d7ee161329fd', {
+    this.pusher = new Pusher('69bc9629d7ee161329fd', {
       cluster: 'eu',
       authEndpoint: '/api/auth'
-    });
-    // Используем presence- канал
+    });    // Используем presence- канал
     this.channel = this.pusher.subscribe(`presence-triviador-${roomId}`);
 
     this.channel.bind('pusher:subscription_succeeded', (members: any) => {

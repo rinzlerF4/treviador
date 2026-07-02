@@ -2,10 +2,12 @@
 import { Component, Input, Output, EventEmitter, OnChanges, OnDestroy, signal, SimpleChanges, inject, computed } from '@angular/core';
 import { Question, NumericQuestion } from '../data/questions';
 import { GameStateService } from '../game-state/game-state.service';
+
 export type ModalMode = 'capture' | 'attack';
 
 @Component({
   selector: 'app-question-modal',
+  standalone: true,
   imports: [],
   template: `
     @if (visible) {
@@ -49,7 +51,6 @@ export type ModalMode = 'capture' | 'attack';
           <!-- ATTACK MODE: input phase -->
           @if (mode === 'attack' && !revealed()) {
             <div class="attack-layout">
-              <!-- P1 -->
               <div class="answer-box p1-box" [class.answered]="p1Answered()">
                 <div class="player-label">🔵 Игрок 1</div>
                 @if (p1Answered()) {
@@ -60,13 +61,12 @@ export type ModalMode = 'capture' | 'attack';
                   <button class="submit-btn p1-submit" (click)="submitAttack(1)" [disabled]="gs.pusher.myPlayerNumber() !== 1">Ответить</button>
                 }
               </div>
-              <!-- Timer -->
+
               <div class="timer-circle" [class.urgent]="timer() <= 10">
                 <span class="timer-num">{{ timer() }}</span>
                 <span class="timer-label">сек</span>
               </div>
 
-              <!-- P2 -->
               <div class="answer-box p2-box" [class.answered]="p2Answered()">
                 <div class="player-label">🔴 Игрок 2</div>
                 @if (p2Answered()) {
@@ -76,41 +76,31 @@ export type ModalMode = 'capture' | 'attack';
                     (input)="onP2Input($event)" [disabled]="gs.pusher.myPlayerNumber() !== 2" />
                   <button class="submit-btn p2-submit" (click)="submitAttack(2)" [disabled]="gs.pusher.myPlayerNumber() !== 2">Ответить</button>
                 }
-              </div>            </div>
+              </div>
+            </div>
           }
 
           <!-- ATTACK MODE: result phase -->
           @if (mode === 'attack' && revealed()) {
             <div class="result-panel">
-
-              <!-- Vertical Bars Visualization -->
               <div class="bars-container">
                 <div class="bar-wrapper p1-bar">
                   <div class="bar-value">{{ p1Answer() }}</div>
-                  <div class="bar-track">
-                    <div class="bar-fill" [style.height.%]="p1BarHeight()"></div>
-                  </div>
+                  <div class="bar-track"><div class="bar-fill" [style.height.%]="p1BarHeight()"></div></div>
                   <div class="bar-label">Игрок 1</div>
                 </div>
-
                 <div class="bar-wrapper correct-bar" [class.visible]="showCorrect()">
                   <div class="bar-value">{{ numericCorrect }}</div>
-                  <div class="bar-track">
-                    <div class="bar-fill" [style.height.%]="correctBarHeight()"></div>
-                  </div>
+                  <div class="bar-track"><div class="bar-fill" [style.height.%]="correctBarHeight()"></div></div>
                   <div class="bar-label">Верно</div>
                 </div>
-
                 <div class="bar-wrapper p2-bar">
                   <div class="bar-value">{{ p2Answer() }}</div>
-                  <div class="bar-track">
-                    <div class="bar-fill" [style.height.%]="p2BarHeight()"></div>
-                  </div>
+                  <div class="bar-track"><div class="bar-fill" [style.height.%]="p2BarHeight()"></div></div>
                   <div class="bar-label">Игрок 2</div>
                 </div>
               </div>
 
-              <!-- Score cards (shown after correct answer) -->
               @if (showCorrect()) {
                 <div class="score-cards">
                   <div class="score-card" [class.winner-card]="attackWinner() === 'p1'">
@@ -141,12 +131,12 @@ export type ModalMode = 'capture' | 'attack';
                   <button class="confirm-btn p2-confirm" [class.confirmed]="p2Confirmed()" (click)="confirm(2)" [disabled]="gs.pusher.myPlayerNumber() !== 2">
                     {{ p2Confirmed() ? '✓ Игрок 2 готов' : '🔴 Игрок 2 — Продолжить' }}
                   </button>
-                </div>              } @else {
+                </div>
+              } @else {
                 <div class="result-loading">Сравнение результатов...</div>
               }
             </div>
           }
-
         </div>
       </div>
     }
@@ -329,6 +319,10 @@ export type ModalMode = 'capture' | 'attack';
       gap: 24px;
       animation: fade-in 0.4s ease;
     }
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
 
     .bars-container {
       display: flex;
@@ -422,7 +416,6 @@ export type ModalMode = 'capture' | 'attack';
 
     .sc-vs { font-size: 12px; color: #555; font-weight: 700; flex-shrink: 0; }
     .sc-player  { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
-    .sc-answer  { font-size: 22px; font-weight: 800; color: #fff; }
     .sc-delta   { font-size: 12px; color: #888; margin-top: 2px; }
     .sc-crown   { margin-top: 6px; font-size: 13px; color: #ffd700; font-weight: 700; }
 
@@ -472,52 +465,45 @@ export type ModalMode = 'capture' | 'attack';
     }
     .p1-confirm:not(.confirmed):hover { background: rgba(26,86,219,0.35); }
     .p2-confirm:not(.confirmed):hover { background: rgba(192,57,43,0.35); }
-
-    .confirm-hint {
-      text-align: center;
-      font-size: 11px;
-      color: rgba(255,255,255,0.25);
-      margin-top: -8px;
-    }
   `],
 })
 export class QuestionModal implements OnChanges, OnDestroy {
-  gs = inject(GameStateService);
+  public gs = inject(GameStateService);
 
-  @Input() visible: boolean = false;  @Input() mode: ModalMode = 'capture';
+  @Input() visible: boolean = false;
+  @Input() mode: ModalMode = 'capture';
   @Input() activePlayer: 1 | 2 = 1;
   @Input() capitalStep: number | null = null;
   @Input() captureQuestion: Question | null = null;
   @Input() attackQuestion: NumericQuestion | null = null;
 
   @Output() captureAnswer = new EventEmitter<number>();
-  @Output() attackAnswer  = new EventEmitter<{ player: 1|2; value: number }>();
-  @Output() attackClose   = new EventEmitter<void>(); // both confirmed
+  @Output() attackAnswer  = new EventEmitter<{ player: 1 | 2; value: number }>();
+  @Output() attackClose   = new EventEmitter<void>(); // fired once both players confirm
 
-  // Capture
+  // ── Capture state ──
   selectedIndex: number | null = null;
 
-  // Attack inputs
-  p1InputVal  = signal('');
-  p2InputVal  = signal('');
-  p1Answered  = computed(() => this.gs.attackState()?.answer1 !== null);
-  p2Answered  = computed(() => this.gs.attackState()?.answer2 !== null);
-  p1Answer    = computed(() => this.gs.attackState()?.answer1 ?? null);
-  p2Answer    = computed(() => this.gs.attackState()?.answer2 ?? null);
-  revealed    = computed(() => this.gs.attackState()?.revealed ?? false);
+  // ── Attack state (local UI only; source of truth is gs.attackState()) ──
+  p1InputVal = signal('');
+  p2InputVal = signal('');
   showCorrect = signal(false);
-  timer       = signal(30);
-  // Confirm to close
+  timer = signal(30);
   p1Confirmed = signal(false);
   p2Confirmed = signal(false);
 
+  p1Answered = computed(() => this.gs.attackState()?.answer1 !== null && this.gs.attackState()?.answer1 !== undefined);
+  p2Answered = computed(() => this.gs.attackState()?.answer2 !== null && this.gs.attackState()?.answer2 !== undefined);
+  p1Answer   = computed(() => this.gs.attackState()?.answer1 ?? null);
+  p2Answer   = computed(() => this.gs.attackState()?.answer2 ?? null);
+  revealed   = computed(() => this.gs.attackState()?.revealed ?? false);
+
   private timerInterval: any = null;
 
-  get questionText()    { return this.mode === 'capture' ? (this.captureQuestion?.text ?? '') : (this.attackQuestion?.text ?? ''); }
-  get captureOptions()  { return this.captureQuestion?.options ?? []; }
-  get correctIndex()    { return this.captureQuestion?.correctIndex ?? -1; }
-  get numericCorrect()  { return this.attackQuestion?.correctAnswer ?? 0; }
-  get numericUnit()     { return this.attackQuestion?.unit ?? ''; }
+  get questionText()   { return this.mode === 'capture' ? (this.captureQuestion?.text ?? '') : (this.attackQuestion?.text ?? ''); }
+  get captureOptions() { return this.captureQuestion?.options ?? []; }
+  get correctIndex()   { return this.captureQuestion?.correctIndex ?? -1; }
+  get numericCorrect() { return this.attackQuestion?.correctAnswer ?? 0; }
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['visible']) {
@@ -526,10 +512,10 @@ export class QuestionModal implements OnChanges, OnDestroy {
         this.startTimer();
       }
       if (!this.visible) {
-        this.resetAll();
+        this.selectedIndex = null;
+        this.stopTimer();
       }
     }
-    // if mode changes while visible
     if (changes['mode'] && this.visible && this.mode === 'attack') {
       this.resetAttack();
       this.startTimer();
@@ -538,7 +524,7 @@ export class QuestionModal implements OnChanges, OnDestroy {
 
   ngOnDestroy() { this.stopTimer(); }
 
-  // ── Capture ───────────────────────────────────────────────
+  // ── Capture ──
   selectCapture(index: number) {
     if (this.selectedIndex !== null) return;
     this.selectedIndex = index;
@@ -548,76 +534,52 @@ export class QuestionModal implements OnChanges, OnDestroy {
     }, 900);
   }
 
-  // ── Attack ────────────────────────────────────────────────
+  // ── Attack ──
   onP1Input(ev: Event) { this.p1InputVal.set((ev.target as HTMLInputElement).value); }
   onP2Input(ev: Event) { this.p2InputVal.set((ev.target as HTMLInputElement).value); }
 
   submitAttack(player: 1 | 2) {
-    if (player === 1 && !this.p1Answered()) {
-      const val = parseFloat(this.p1InputVal());
-      if (isNaN(val)) return;
-      this.p1Answer.set(val);
-      this.p1Answered.set(true);
-      this.attackAnswer.emit({ player: 1, value: val });
-    }
-    if (player === 2 && !this.p2Answered()) {
-      const val = parseFloat(this.p2InputVal());
-      if (isNaN(val)) return;
-      this.p2Answer.set(val);
-      this.p2Answered.set(true);
-      this.attackAnswer.emit({ player: 2, value: val });
-    }
-    if (this.p1Answered() && this.p2Answered()) {
-      this.stopTimer();
-      this.revealed.set(true);
-      setTimeout(() => this.showCorrect.set(true), 1500);
-    }
+    const val = parseFloat(player === 1 ? this.p1InputVal() : this.p2InputVal());
+    if (!isNaN(val)) this.attackAnswer.emit({ player, value: val });
   }
 
   confirm(player: 1 | 2) {
     if (player === 1) this.p1Confirmed.set(true);
     if (player === 2) this.p2Confirmed.set(true);
-    if (this.p1Confirmed() && this.p2Confirmed()) {
-      this.attackClose.emit();
-    }
+    if (this.p1Confirmed() && this.p2Confirmed()) this.attackClose.emit();
   }
 
   private startTimer() {
     this.timer.set(30);
     this.timerInterval = setInterval(() => {
-      const t = this.timer() - 1;
-      this.timer.set(t);
-      if (t <= 0) {
+      this.timer.update(t => t - 1);
+      if (this.timer() <= 0) {
         this.stopTimer();
-        this.revealed.set(true);
-        setTimeout(() => this.showCorrect.set(true), 1500);
+        if (this.revealed()) setTimeout(() => this.showCorrect.set(true), 1500);
       }
     }, 1000);
   }
 
   private stopTimer() {
-    if (this.timerInterval) { clearInterval(this.timerInterval); this.timerInterval = null; }
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+      this.timerInterval = null;
+    }
   }
 
   private resetAttack() {
-    this.p1InputVal.set(''); this.p2InputVal.set('');
-    this.p1Answered.set(false); this.p2Answered.set(false);
-    this.p1Answer.set(null); this.p2Answer.set(null);
-    this.revealed.set(false);
+    this.p1InputVal.set('');
+    this.p2InputVal.set('');
     this.showCorrect.set(false);
-    this.p1Confirmed.set(false); this.p2Confirmed.set(false);
+    this.p1Confirmed.set(false);
+    this.p2Confirmed.set(false);
     this.stopTimer();
   }
 
-  private resetAll() {
-    this.selectedIndex = null;
-    this.resetAttack();
-  }
-
-  // ── Bar heights ───────────────────────────────────────────
+  // ── Bar heights / deltas ──
   private getMaxValue() {
     const vals = [this.numericCorrect, this.p1Answer(), this.p2Answer()].filter(v => v !== null) as number[];
-    return Math.max(...vals, 1); // avoid div by zero
+    return Math.max(...vals, 1); // avoid division by zero
   }
 
   p1BarHeight      = () => this.p1Answer() !== null ? (this.p1Answer()! / this.getMaxValue()) * 100 : 0;
