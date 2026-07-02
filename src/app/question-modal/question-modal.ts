@@ -1,7 +1,7 @@
 // src/app/question-modal/question-modal.ts
-import { Component, Input, Output, EventEmitter, OnChanges, OnDestroy, signal, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, OnDestroy, signal, SimpleChanges, inject, computed } from '@angular/core';
 import { Question, NumericQuestion } from '../data/questions';
-
+import { GameStateService } from '../game-state/game-state.service';
 export type ModalMode = 'capture' | 'attack';
 
 @Component({
@@ -56,11 +56,10 @@ export type ModalMode = 'capture' | 'attack';
                   <div class="answered-check">✓ Готово</div>
                 } @else {
                   <input class="num-input" type="number" placeholder="Ваш ответ"
-                    (input)="onP1Input($event)" [disabled]="p1Answered()" />
-                  <button class="submit-btn p1-submit" (click)="submitAttack(1)">Ответить</button>
+                    (input)="onP1Input($event)" [disabled]="gs.pusher.myPlayerNumber() !== 1" />
+                  <button class="submit-btn p1-submit" (click)="submitAttack(1)" [disabled]="gs.pusher.myPlayerNumber() !== 1">Ответить</button>
                 }
               </div>
-
               <!-- Timer -->
               <div class="timer-circle" [class.urgent]="timer() <= 10">
                 <span class="timer-num">{{ timer() }}</span>
@@ -74,11 +73,10 @@ export type ModalMode = 'capture' | 'attack';
                   <div class="answered-check">✓ Готово</div>
                 } @else {
                   <input class="num-input" type="number" placeholder="Ваш ответ"
-                    (input)="onP2Input($event)" [disabled]="p2Answered()" />
-                  <button class="submit-btn p2-submit" (click)="submitAttack(2)">Ответить</button>
+                    (input)="onP2Input($event)" [disabled]="gs.pusher.myPlayerNumber() !== 2" />
+                  <button class="submit-btn p2-submit" (click)="submitAttack(2)" [disabled]="gs.pusher.myPlayerNumber() !== 2">Ответить</button>
                 }
-              </div>
-            </div>
+              </div>            </div>
           }
 
           <!-- ATTACK MODE: result phase -->
@@ -137,14 +135,13 @@ export type ModalMode = 'capture' | 'attack';
                 </div>
 
                 <div class="confirm-row">
-                  <button class="confirm-btn p1-confirm" [class.confirmed]="p1Confirmed()" (click)="confirm(1)">
+                  <button class="confirm-btn p1-confirm" [class.confirmed]="p1Confirmed()" (click)="confirm(1)" [disabled]="gs.pusher.myPlayerNumber() !== 1">
                     {{ p1Confirmed() ? '✓ Игрок 1 готов' : '🔵 Игрок 1 — Продолжить' }}
                   </button>
-                  <button class="confirm-btn p2-confirm" [class.confirmed]="p2Confirmed()" (click)="confirm(2)">
+                  <button class="confirm-btn p2-confirm" [class.confirmed]="p2Confirmed()" (click)="confirm(2)" [disabled]="gs.pusher.myPlayerNumber() !== 2">
                     {{ p2Confirmed() ? '✓ Игрок 2 готов' : '🔴 Игрок 2 — Продолжить' }}
                   </button>
-                </div>
-              } @else {
+                </div>              } @else {
                 <div class="result-loading">Сравнение результатов...</div>
               }
             </div>
@@ -485,8 +482,9 @@ export type ModalMode = 'capture' | 'attack';
   `],
 })
 export class QuestionModal implements OnChanges, OnDestroy {
-  @Input() visible: boolean = false;
-  @Input() mode: ModalMode = 'capture';
+  gs = inject(GameStateService);
+
+  @Input() visible: boolean = false;  @Input() mode: ModalMode = 'capture';
   @Input() activePlayer: 1 | 2 = 1;
   @Input() capitalStep: number | null = null;
   @Input() captureQuestion: Question | null = null;
@@ -502,14 +500,13 @@ export class QuestionModal implements OnChanges, OnDestroy {
   // Attack inputs
   p1InputVal  = signal('');
   p2InputVal  = signal('');
-  p1Answered  = signal(false);
-  p2Answered  = signal(false);
-  p1Answer    = signal<number | null>(null);
-  p2Answer    = signal<number | null>(null);
-  revealed    = signal(false);
+  p1Answered  = computed(() => this.gs.attackState()?.answer1 !== null);
+  p2Answered  = computed(() => this.gs.attackState()?.answer2 !== null);
+  p1Answer    = computed(() => this.gs.attackState()?.answer1 ?? null);
+  p2Answer    = computed(() => this.gs.attackState()?.answer2 ?? null);
+  revealed    = computed(() => this.gs.attackState()?.revealed ?? false);
   showCorrect = signal(false);
   timer       = signal(30);
-
   // Confirm to close
   p1Confirmed = signal(false);
   p2Confirmed = signal(false);

@@ -11,6 +11,13 @@ const pusher = new Pusher({
 module.exports = async (req, res) => {
   const socketId = req.body.socket_id;
   const channel = req.body.channel_name;
-  const auth = pusher.authenticate(socketId, channel);
+  
+  // Генерируем случайный ID для пользователя
+  const presenceData = {
+    user_id: Math.random().toString(36).slice(2),
+    user_info: { name: "Player" }
+  };
+
+  const auth = pusher.authenticate(socketId, channel, presenceData);
   res.send(auth);
 };

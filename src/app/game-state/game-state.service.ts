@@ -83,17 +83,20 @@ export class GameStateService {
         this.applyState(event.data);
       }
       if (event.type === 'request-state') {
-        // Если мы уже в игре, отправляем свое состояние новичку
-        this.sync();
+        // Только Игрок 1 отвечает на запросы состояния, чтобы не было конфликтов
+        if (this.pusher.myPlayerNumber() === 1) {
+          this.sync();
+        }
       }
     });
 
-    // При входе просим актуальное состояние
+    // При входе просим актуальное состояние у Игрока 1
     setTimeout(() => {
-      this.pusher.sendAction('request-state', {});
-    }, 1000);
+      if (this.pusher.myPlayerNumber() === 2) {
+        this.pusher.sendAction('request-state', {});
+      }
+    }, 1500);
   }
-
   private applyState(data: any) {
     if (data.cells) this.cells.set(data.cells);
     if (data.currentPlayer) this.currentPlayer.set(data.currentPlayer);

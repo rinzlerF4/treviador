@@ -22,8 +22,18 @@ import { QuestionModal } from '../question-modal/question-modal';
 
     <div class="game-root">
 
-      <!-- Score bar -->
-      <div class="scorebar">
+      @if (gs.pusher.playersCount() < 2) {
+        <div class="waiting-overlay">
+          <div class="waiting-card">
+            <h2>⏳ Ожидание противника...</h2>
+            <p>Отправьте ссылку другу, чтобы начать игру</p>
+            <div class="room-link">{{ currentUrl }}</div>
+            <button class="copy-btn" (click)="copyLink()">Копировать ссылку</button>
+          </div>
+        </div>
+      }
+
+      <!-- Score bar -->      <div class="scorebar">
         <div class="score-block p1-score" [class.active]="gs.currentPlayer() === 1 && gs.phase() !== 'gameover'">
           <span class="player-name">🔵 Игрок 1</span>
           <span class="cell-count">{{ gs.player1Cells().length }}</span>
@@ -152,8 +162,25 @@ import { QuestionModal } from '../question-modal/question-modal';
     .restart-btn:hover { background: #1e40af; }
 
     .hint { font-size: 13px; color: rgba(255,255,255,0.3); text-align: center; }
-  `],
-})
+
+    .waiting-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center; z-index: 2000;
+    }
+    .waiting-card {
+      background: #161b27; padding: 40px; border-radius: 24px; text-align: center;
+      border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    }
+    .room-link {
+      background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px;
+      margin: 20px 0; font-family: monospace; font-size: 14px; color: #6ea8ff;
+      word-break: break-all;
+    }
+    .copy-btn {
+      padding: 10px 24px; background: #1a56db; border: none; border-radius: 8px;
+      color: #fff; font-weight: 600; cursor: pointer;
+    }
+  `],})
 export class GameGrid {
   gs = inject(GameStateService);
 
@@ -164,12 +191,22 @@ export class GameGrid {
   capitalStep    = computed(() => this.gs.capitalAttackState()?.step ?? null);
   attackQuestion = computed(() => this.gs.attackState()?.question ?? null);
 
+  currentUrl = window.location.href;
+
+  copyLink() {
+    navigator.clipboard.writeText(this.currentUrl);
+    alert('Ссылка скопирована!');
+  }
+
   /** Set of cell IDs that are clickable this turn — recomputed reactively */
   clickableCells = computed<Set<number>>(() => {
     if (this.gs.modalMode() !== null) return new Set();
     if (this.gs.phase() !== 'capture') return new Set();
-    const player = this.gs.currentPlayer();
-    return new Set(
+    
+    // Запрет хода, если сейчас не твой номер игрока
+    if (this.gs.currentPlayer() !== this.gs.pusher.myPlayerNumber()) return new Set();
+
+    const player = this.gs.currentPlayer();    return new Set(
       this.gs.cells()
         .filter(c => this.gs.canCapture(c.id, player))
         .map(c => c.id)
@@ -179,8 +216,11 @@ export class GameGrid {
   attackableCells = computed<Set<number>>(() => {
     if (this.gs.modalMode() !== null) return new Set();
     if (this.gs.phase() !== 'attack') return new Set();
-    const player = this.gs.currentPlayer();
-    return new Set(
+
+    // Запрет хода, если сейчас не твой номер игрока
+    if (this.gs.currentPlayer() !== this.gs.pusher.myPlayerNumber()) return new Set();
+
+    const player = this.gs.currentPlayer();    return new Set(
       this.gs.cells()
         .filter(c => this.gs.canAttack(c.id, player))
         .map(c => c.id)
@@ -238,17 +278,8 @@ export class GameGrid {
   }
 
   onAttackAnswer(ev: { player: 1 | 2; value: number }) {
-    // Just record the answer — modal handles reveal state internally.
-    // We save the value to attackState so onAttackClose can resolve.
-    const st = this.gs.attackState();
-    if (!st) return;
-    this.gs.attackState.set({
-      ...st,
-      answer1: ev.player === 1 ? ev.value : st.answer1,
-      answer2: ev.player === 2 ? ev.value : st.answer2,
-    });
+    this.gs.submitAttackAnswer(ev.player, ev.value);
   }
-
   onAttackClose() {
     // Both players confirmed — resolve the attack
     const st = this.gs.attackState();
