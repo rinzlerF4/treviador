@@ -1,7 +1,8 @@
 // src/app/game-state/game-state.service.ts
 
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import { QUESTIONS, NUMERIC_QUESTIONS, Question, NumericQuestion } from '../data/questions';
+import { PusherService } from '../services/socket.service';
 
 export type Player = 1 | 2;
 export type GamePhase = 'capture' | 'attack' | 'gameover';
@@ -38,6 +39,7 @@ export interface CapitalAttackState {
 
 @Injectable({ providedIn: 'root' })
 export class GameStateService {
+  private pusher = inject(PusherService);
   readonly GRID_SIZE = 2;
   readonly TOTAL_CELLS = this.GRID_SIZE * this.GRID_SIZE;
 
@@ -72,6 +74,38 @@ export class GameStateService {
 
   constructor() {
     this.initGrid();
+    this.setupSocketListeners();
+  }
+
+  private setupSocketListeners() {
+    this.pusher.onEvent.subscribe(event => {
+      // Слушаем события от другого игрока
+      if (event.type === 'sync-state') {
+        this.applyState(event.data);
+      }
+    });
+  }
+
+  private applyState(data: any) {
+    if (data.cells) this.cells.set(data.cells);
+    if (data.currentPlayer) this.currentPlayer.set(data.currentPlayer);
+    if (data.phase) this.phase.set(data.phase);
+    if (data.modalMode !== undefined) this.modalMode.set(data.modalMode);
+    if (data.captureQuestion !== undefined) this.captureQuestion.set(data.captureQuestion);
+    if (data.attackState !== undefined) this.attackState.set(data.attackState);
+    if (data.capitalAttackState !== undefined) this.capitalAttackState.set(data.capitalAttackState);
+  }
+
+  private sync() {
+    this.pusher.sendAction('sync-state', {
+      cells: this.cells(),
+      currentPlayer: this.currentPlayer(),
+      phase: this.phase(),
+      modalMode: this.modalMode(),
+      captureQuestion: this.captureQuestion(),
+      attackState: this.attackState(),
+      capitalAttackState: this.capitalAttackState()
+    });
   }
 
   // ── Initialisation ───────────────────────────────────────
@@ -168,6 +202,7 @@ export class GameStateService {
     this.captureQuestion.set(q);
     this.pendingCellId.set(cellId);
     this.modalMode.set('capture');
+    this.sync();
   }
 
   resolveCaptureAnswer(answerIndex: number) {
@@ -190,6 +225,7 @@ export class GameStateService {
     this.pendingCellId.set(null);
     this.modalMode.set(null);
     this.switchTurn();
+    this.sync();
   }
 
   private setCellOwner(cellId: number, owner: Player, isCapital = false) {
@@ -258,6 +294,7 @@ export class GameStateService {
       revealed: false,
     });
     this.modalMode.set('attack');
+    this.sync();
   }
 
   submitAttackAnswer(player: Player, answer: number) {
@@ -310,6 +347,7 @@ export class GameStateService {
     this.modalMode.set(null);
     this.checkGameOver();
     this.switchTurn();
+    this.sync();
   }
 
   // ── Capital attack (3-step) ───────────────────────────────
