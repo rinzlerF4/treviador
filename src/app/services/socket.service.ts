@@ -6,6 +6,7 @@ import { Subject } from 'rxjs';
 export class PusherService {
   private pusher: any;
   private channel: any;
+  private roomId: string;
   public onEvent = new Subject<{ type: string; data: any }>();
   public myPlayerNumber = signal<1 | 2 | null>(null);
   public playersCount = signal(0);
@@ -17,20 +18,14 @@ export class PusherService {
       roomId = Math.random().toString(36).substring(7);
       window.history.replaceState({}, '', `?room=${roomId}`);
     }
+    this.roomId = roomId;
 
     try {
       this.pusher = new Pusher('69bc9629d7ee161329fd', {
         cluster: 'eu',
-        authEndpoint: '/api/auth',
-        auth: {
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
       });
 
-      const channelName = `presence-triviador-${roomId}`;
-      this.channel = this.pusher.subscribe(channelName);
+      this.channel = this.pusher.subscribe(`triviador-public-${roomId}`);
       this.bindEvents();
     } catch (e) {
       console.error('Pusher init error:', e);
@@ -40,35 +35,30 @@ export class PusherService {
   private bindEvents() {
     if (!this.channel) return;
 
-    this.channel.bind('pusher:subscription_succeeded', (members: any) => {
-      this.playersCount.set(members.count);
-      if (!this.myPlayerNumber()) {
-        this.myPlayerNumber.set(members.count === 1 ? 1 : 2);
-      }
-    });
-
-    this.channel.bind('pusher:member_added', () => {
-      if (this.channel.members) this.playersCount.set(this.channel.members.count);
-    });
-
-    this.channel.bind('pusher:member_removed', () => {
-      if (this.channel.members) this.playersCount.set(this.channel.members.count);
-    });
-
-    this.channel.bind('client-sync-state', (data: any) => {
+    this.channel.bind('sync-state', (data: any) => {
       this.onEvent.next({ type: 'sync-state', data });
     });
 
-    this.channel.bind('client-request-state', () => {
+    this.channel.bind('request-state', () => {
       this.onEvent.next({ type: 'request-state', data: null });
     });
   }
 
-  sendAction(type: string, data: any) {
-    if (!this.channel || !this.channel.subscribed) {
-      console.warn(`sendAction("${type}") skipped: channel not initialized or not subscribed`);
-      return;
+  // Публичные каналы не поддерживают client.trigger —
+  // отправляем событие на бэкенд, а он публикует его через серверный Pusher SDK
+  async sendAction(type: string, data: any) {
+    try {
+      await fetch('/api/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          channel: `triviador-public-${this.roomId}`,
+          event: type,
+          data,
+        }),
+      });
+    } catch (e) {
+      console.error(`sendAction("${type}") failed:`, e);
     }
-    this.channel.trigger(`client-${type}`, data);
   }
 }
