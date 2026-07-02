@@ -18,7 +18,12 @@ export class PusherService {
 
     this.pusher = new (Pusher as any)('69bc9629d7ee161329fd', {
       cluster: 'eu',
-      authEndpoint: window.location.origin + '/api/auth' // Добавили полный путь
+      authEndpoint: window.location.origin + '/api/auth',
+      auth: {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
     });
 
     this.channel.bind('pusher:member_added', (member: any) => {
