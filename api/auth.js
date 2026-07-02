@@ -40,3 +40,11 @@ module.exports = async (req, res) => {
     });
   }
 };
+
+  try {
+    const auth = pusher.authenticate(socketId, channel, presenceData);
+    return res.send(auth);
+  } catch (error) {
+    console.error("Pusher Auth Error:", error);
+    return res.status(403).send("Forbidden");
+  }
