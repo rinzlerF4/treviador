@@ -22,17 +22,20 @@ import { QuestionModal } from '../question-modal/question-modal';
 
     <div class="game-root">
 
-      @if (gs.pusher.playersCount() < 2) {
+      @if (!gs.pusher.myPlayerNumber()) {
         <div class="waiting-overlay">
           <div class="waiting-card">
-            <h2>⏳ Ожидание противника...</h2>
-            <p>Отправьте ссылку другу, чтобы начать игру</p>
+            <h2>🎮 Выберите игрока</h2>
+            <p>Договоритесь с другом, кто кем будет</p>
+            <div class="role-buttons">
+              <button class="role-btn p1" (click)="gs.pusher.myPlayerNumber.set(1)">🔵 Я Игрок 1</button>
+              <button class="role-btn p2" (click)="gs.pusher.myPlayerNumber.set(2)">🔴 Я Игрок 2</button>
+            </div>
             <div class="room-link">{{ currentUrl }}</div>
             <button class="copy-btn" (click)="copyLink()">Копировать ссылку</button>
           </div>
         </div>
       }
-
       <!-- Score bar -->      <div class="scorebar">
         <div class="score-block p1-score" [class.active]="gs.currentPlayer() === 1 && gs.phase() !== 'gameover'">
           <span class="player-name">🔵 Игрок 1</span>
@@ -176,8 +179,16 @@ import { QuestionModal } from '../question-modal/question-modal';
       margin: 20px 0; font-family: monospace; font-size: 14px; color: #6ea8ff;
       word-break: break-all;
     }
-    .copy-btn {
-      padding: 10px 24px; background: #1a56db; border: none; border-radius: 8px;
+    .role-buttons {
+      display: flex; gap: 10px; margin-bottom: 20px; justify-content: center;
+    }
+    .role-btn {
+      padding: 12px 20px; border: none; border-radius: 8px; color: #fff; font-weight: 700; cursor: pointer; transition: transform 0.2s;
+    }
+    .role-btn:hover { transform: scale(1.05); }
+    .role-btn.p1 { background: #1a56db; }
+    .role-btn.p2 { background: #c0392b; }
+    .copy-btn {      padding: 10px 24px; background: #1a56db; border: none; border-radius: 8px;
       color: #fff; font-weight: 600; cursor: pointer;
     }
   `],})

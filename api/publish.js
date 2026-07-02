@@ -1,13 +1,12 @@
 const Pusher = require("pusher");
 
 const pusher = new Pusher({
-  appId: process.env.PUSHER_APP_ID,
-  key: process.env.PUSHER_KEY,
-  secret: process.env.PUSHER_SECRET,
+  appId: "2172967",
+  key: "69bc9629d7ee161329fd",
+  secret: "e281db0dd903fbea903c",
   cluster: "eu",
   useTLS: true,
 });
-
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
