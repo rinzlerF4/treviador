@@ -85,85 +85,67 @@ export type ModalMode = 'capture' | 'attack';
           @if (mode === 'attack' && revealed()) {
             <div class="result-panel">
 
-              <!-- Number line visualization -->
-              <div class="nl-section">
-                <div class="nl-title">📍 Правильный ответ: <strong>{{ numericCorrect }} {{ numericUnit }}</strong></div>
-                <div class="nl-container">
-                  <div class="nl-track">
-                    <!-- gradient fill from left to right -->
-                    <div class="nl-fill"></div>
-
-                    <!-- correct marker -->
-                    <div class="nl-marker correct-marker" [style.left]="correctPercent() + '%'">
-                      <div class="nl-stem correct-stem"></div>
-                      <div class="nl-dot correct-dot"></div>
-                      <div class="nl-tag correct-tag">{{ numericCorrect }}<br><span class="tag-sub">{{ numericUnit }}</span></div>
-                    </div>
-
-                    <!-- p1 marker -->
-                    @if (p1Answer() !== null) {
-                      <div class="nl-marker p1-marker-pos" [style.left]="p1Percent() + '%'">
-                        <div class="nl-stem p1-stem"></div>
-                        <div class="nl-dot p1-dot"></div>
-                        <div class="nl-tag p1-tag">{{ p1Answer() }}<br><span class="tag-sub">Игрок 1</span></div>
-                      </div>
-                    }
-
-                    <!-- p2 marker -->
-                    @if (p2Answer() !== null) {
-                      <div class="nl-marker p2-marker-pos" [style.left]="p2Percent() + '%'">
-                        <div class="nl-stem p2-stem"></div>
-                        <div class="nl-dot p2-dot"></div>
-                        <div class="nl-tag p2-tag">{{ p2Answer() }}<br><span class="tag-sub">Игрок 2</span></div>
-                      </div>
-                    }
+              <!-- Vertical Bars Visualization -->
+              <div class="bars-container">
+                <div class="bar-wrapper p1-bar">
+                  <div class="bar-value">{{ p1Answer() }}</div>
+                  <div class="bar-track">
+                    <div class="bar-fill" [style.height.%]="p1BarHeight()"></div>
                   </div>
+                  <div class="bar-label">Игрок 1</div>
+                </div>
 
-                  <!-- axis labels -->
-                  <div class="nl-axis">
-                    <span>{{ lineMin() }}</span>
-                    <span>{{ lineMax() }}</span>
+                <div class="bar-wrapper correct-bar" [class.visible]="showCorrect()">
+                  <div class="bar-value">{{ numericCorrect }}</div>
+                  <div class="bar-track">
+                    <div class="bar-fill" [style.height.%]="correctBarHeight()"></div>
+                  </div>
+                  <div class="bar-label">Верно</div>
+                </div>
+
+                <div class="bar-wrapper p2-bar">
+                  <div class="bar-value">{{ p2Answer() }}</div>
+                  <div class="bar-track">
+                    <div class="bar-fill" [style.height.%]="p2BarHeight()"></div>
+                  </div>
+                  <div class="bar-label">Игрок 2</div>
+                </div>
+              </div>
+
+              <!-- Score cards (shown after correct answer) -->
+              @if (showCorrect()) {
+                <div class="score-cards">
+                  <div class="score-card" [class.winner-card]="attackWinner() === 'p1'">
+                    <div class="sc-player p1-color">🔵 Игрок 1</div>
+                    <div class="sc-delta">Δ {{ p1Delta() }}</div>
+                    @if (attackWinner() === 'p1') { <div class="sc-crown">👑 Ближе!</div> }
+                  </div>
+                  <div class="sc-vs">VS</div>
+                  <div class="score-card" [class.winner-card]="attackWinner() === 'p2'">
+                    <div class="sc-player p2-color">🔴 Игрок 2</div>
+                    <div class="sc-delta">Δ {{ p2Delta() }}</div>
+                    @if (attackWinner() === 'p2') { <div class="sc-crown">👑 Ближе!</div> }
                   </div>
                 </div>
-              </div>
 
-              <!-- Score cards -->
-              <div class="score-cards">
-                <div class="score-card" [class.winner-card]="attackWinner() === 'p1'">
-                  <div class="sc-player p1-color">🔵 Игрок 1</div>
-                  <div class="sc-answer">{{ p1Answer() ?? '—' }} {{ numericUnit }}</div>
-                  <div class="sc-delta">Δ {{ p1Delta() }}</div>
-                  @if (attackWinner() === 'p1') { <div class="sc-crown">👑 Ближе!</div> }
+                <div class="result-verdict">
+                  @if (attackWinner() === 'draw') {
+                    🤝 Ничья — клетка остаётся у защитника
+                  } @else {
+                    {{ attackWinner() === 'p1' ? '🔵 Игрок 1' : '🔴 Игрок 2' }} захватывает клетку!
+                  }
                 </div>
-                <div class="sc-vs">VS</div>
-                <div class="score-card" [class.winner-card]="attackWinner() === 'p2'">
-                  <div class="sc-player p2-color">🔴 Игрок 2</div>
-                  <div class="sc-answer">{{ p2Answer() ?? '—' }} {{ numericUnit }}</div>
-                  <div class="sc-delta">Δ {{ p2Delta() }}</div>
-                  @if (attackWinner() === 'p2') { <div class="sc-crown">👑 Ближе!</div> }
+
+                <div class="confirm-row">
+                  <button class="confirm-btn p1-confirm" [class.confirmed]="p1Confirmed()" (click)="confirm(1)">
+                    {{ p1Confirmed() ? '✓ Игрок 1 готов' : '🔵 Игрок 1 — Продолжить' }}
+                  </button>
+                  <button class="confirm-btn p2-confirm" [class.confirmed]="p2Confirmed()" (click)="confirm(2)">
+                    {{ p2Confirmed() ? '✓ Игрок 2 готов' : '🔴 Игрок 2 — Продолжить' }}
+                  </button>
                 </div>
-              </div>
-
-              <!-- Result text -->
-              <div class="result-verdict">
-                @if (attackWinner() === 'draw') {
-                  🤝 Ничья — клетка остаётся у защитника
-                } @else {
-                  {{ attackWinner() === 'p1' ? '🔵 Игрок 1' : '🔴 Игрок 2' }} захватывает клетку!
-                }
-              </div>
-
-              <!-- Both players must confirm to close -->
-              <div class="confirm-row">
-                <button class="confirm-btn p1-confirm" [class.confirmed]="p1Confirmed()" (click)="confirm(1)">
-                  {{ p1Confirmed() ? '✓ Игрок 1 готов' : '🔵 Игрок 1 — Продолжить' }}
-                </button>
-                <button class="confirm-btn p2-confirm" [class.confirmed]="p2Confirmed()" (click)="confirm(2)">
-                  {{ p2Confirmed() ? '✓ Игрок 2 готов' : '🔴 Игрок 2 — Продолжить' }}
-                </button>
-              </div>
-              @if (!p1Confirmed() || !p2Confirmed()) {
-                <div class="confirm-hint">Оба игрока должны нажать кнопку</div>
+              } @else {
+                <div class="result-loading">Сравнение результатов...</div>
               }
             </div>
           }
@@ -347,95 +329,77 @@ export type ModalMode = 'capture' | 'attack';
     .result-panel {
       display: flex;
       flex-direction: column;
-      gap: 18px;
+      gap: 24px;
       animation: fade-in 0.4s ease;
     }
-    @keyframes fade-in { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
 
-    /* Number line */
-    .nl-section { }
-    .nl-title {
-      font-size: 14px;
-      text-align: center;
-      color: #aaa;
-      margin-bottom: 14px;
-    }
-    .nl-title strong { color: #ffd700; }
-
-    .nl-container { padding: 0 8px; }
-
-    .nl-track {
-      position: relative;
-      height: 56px;
-      background: rgba(255,255,255,0.05);
-      border-radius: 6px;
-      border: 1px solid rgba(255,255,255,0.08);
-      margin-bottom: 4px;
+    .bars-container {
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-end;
+      height: 200px;
+      padding: 20px 0;
+      background: rgba(255,255,255,0.03);
+      border-radius: 16px;
+      gap: 10px;
     }
 
-    .nl-fill {
-      position: absolute;
-      inset: 0;
-      border-radius: 6px;
-      background: linear-gradient(90deg,
-        rgba(192,57,43,0.15) 0%,
-        rgba(255,215,0,0.08) 50%,
-        rgba(26,86,219,0.15) 100%);
-    }
-
-    .nl-marker {
-      position: absolute;
-      top: 0; bottom: 0;
-      transform: translateX(-50%);
+    .bar-wrapper {
+      flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-end;
-      padding-bottom: 4px;
+      gap: 8px;
+      height: 100%;
     }
 
-    .nl-stem {
-      position: absolute;
-      top: 0; bottom: 0;
-      width: 2px;
+    .bar-track {
+      flex: 1;
+      width: 40px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
     }
-    .correct-stem { background: #ffd700; }
-    .p1-stem      { background: #6ea8ff; }
-    .p2-stem      { background: #ff7070; }
 
-    .nl-dot {
-      width: 10px; height: 10px;
-      border-radius: 50%;
+    .bar-fill {
       position: absolute;
-      top: 50%; transform: translateY(-50%);
+      bottom: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      transition: height 1.5s cubic-bezier(0.17, 0.67, 0.83, 0.67);
     }
-    .correct-dot { background: #ffd700; box-shadow: 0 0 8px #ffd700; width: 12px; height: 12px; }
-    .p1-dot      { background: #6ea8ff; box-shadow: 0 0 6px #6ea8ff; }
-    .p2-dot      { background: #ff7070; box-shadow: 0 0 6px #ff7070; }
 
-    .nl-tag {
-      position: absolute;
-      top: 4px;
-      font-size: 9px;
-      line-height: 1.3;
+    .p1-bar .bar-fill { background: linear-gradient(to top, #1a56db, #6ea8ff); }
+    .p2-bar .bar-fill { background: linear-gradient(to top, #c0392b, #ff7070); }
+    .correct-bar .bar-fill { background: linear-gradient(to top, #f59e0b, #ffd700); }
+
+    .correct-bar {
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.5s ease;
+    }
+    .correct-bar.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .bar-value {
+      font-size: 16px;
+      font-weight: 800;
+      color: #fff;
+    }
+    .bar-label {
+      font-size: 11px;
+      color: #888;
+      font-weight: 600;
+    }
+
+    .result-loading {
       text-align: center;
-      white-space: nowrap;
-      padding: 2px 5px;
-      border-radius: 4px;
-      font-weight: 700;
-    }
-    .correct-tag { color: #ffd700; background: rgba(255,215,0,0.15); }
-    .p1-tag      { color: #6ea8ff; background: rgba(110,168,255,0.12); }
-    .p2-tag      { color: #ff7070; background: rgba(255,112,112,0.12); }
-    .tag-sub     { font-weight: 400; opacity: 0.7; }
-
-    .nl-axis {
-      display: flex;
-      justify-content: space-between;
-      font-size: 10px;
-      color: rgba(255,255,255,0.3);
-      padding: 0 4px;
-      margin-top: 2px;
+      font-style: italic;
+      color: #666;
     }
 
     /* Score cards */
@@ -543,6 +507,7 @@ export class QuestionModal implements OnChanges, OnDestroy {
   p1Answer    = signal<number | null>(null);
   p2Answer    = signal<number | null>(null);
   revealed    = signal(false);
+  showCorrect = signal(false);
   timer       = signal(30);
 
   // Confirm to close
@@ -608,6 +573,7 @@ export class QuestionModal implements OnChanges, OnDestroy {
     if (this.p1Answered() && this.p2Answered()) {
       this.stopTimer();
       this.revealed.set(true);
+      setTimeout(() => this.showCorrect.set(true), 1500);
     }
   }
 
@@ -627,6 +593,7 @@ export class QuestionModal implements OnChanges, OnDestroy {
       if (t <= 0) {
         this.stopTimer();
         this.revealed.set(true);
+        setTimeout(() => this.showCorrect.set(true), 1500);
       }
     }, 1000);
   }
@@ -640,6 +607,7 @@ export class QuestionModal implements OnChanges, OnDestroy {
     this.p1Answered.set(false); this.p2Answered.set(false);
     this.p1Answer.set(null); this.p2Answer.set(null);
     this.revealed.set(false);
+    this.showCorrect.set(false);
     this.p1Confirmed.set(false); this.p2Confirmed.set(false);
     this.stopTimer();
   }
@@ -649,29 +617,15 @@ export class QuestionModal implements OnChanges, OnDestroy {
     this.resetAttack();
   }
 
-  // ── Number line ───────────────────────────────────────────
-  lineMin = () => {
+  // ── Bar heights ───────────────────────────────────────────
+  private getMaxValue() {
     const vals = [this.numericCorrect, this.p1Answer(), this.p2Answer()].filter(v => v !== null) as number[];
-    if (vals.length === 0) return 0;
-    const spread = Math.max(...vals) - Math.min(...vals);
-    return Math.min(...vals) - Math.ceil(spread * 0.15 + 1);
-  };
-  lineMax = () => {
-    const vals = [this.numericCorrect, this.p1Answer(), this.p2Answer()].filter(v => v !== null) as number[];
-    if (vals.length === 0) return 100;
-    const spread = Math.max(...vals) - Math.min(...vals);
-    return Math.max(...vals) + Math.ceil(spread * 0.15 + 1);
-  };
-
-  private toPercent(val: number): number {
-    const min = this.lineMin(), max = this.lineMax();
-    if (min === max) return 50;
-    return Math.round(((val - min) / (max - min)) * 80 + 10);
+    return Math.max(...vals, 1); // avoid div by zero
   }
 
-  correctPercent = () => this.toPercent(this.numericCorrect);
-  p1Percent      = () => this.p1Answer() !== null ? this.toPercent(this.p1Answer()!) : 0;
-  p2Percent      = () => this.p2Answer() !== null ? this.toPercent(this.p2Answer()!) : 0;
+  p1BarHeight      = () => this.p1Answer() !== null ? (this.p1Answer()! / this.getMaxValue()) * 100 : 0;
+  p2BarHeight      = () => this.p2Answer() !== null ? (this.p2Answer()! / this.getMaxValue()) * 100 : 0;
+  correctBarHeight = () => (this.numericCorrect / this.getMaxValue()) * 100;
 
   p1Delta = () => this.p1Answer() !== null ? Math.abs(this.p1Answer()! - this.numericCorrect) : '—';
   p2Delta = () => this.p2Answer() !== null ? Math.abs(this.p2Answer()! - this.numericCorrect) : '—';

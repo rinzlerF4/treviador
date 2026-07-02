@@ -13,8 +13,8 @@ import { QuestionModal } from '../question-modal/question-modal';
       [mode]="gs.modalMode() === 'attack' ? 'attack' : 'capture'"
       [activePlayer]="gs.currentPlayer()"
       [capitalStep]="capitalStep()"
-      [captureQuestion]="gs.captureQuestion()"
-      [attackQuestion]="attackQuestion()"
+      [captureQuestion]="gs.capitalAttackState() ? gs.capitalAttackState()?.currentQuestion! : gs.captureQuestion()"
+      [attackQuestion]="gs.capitalAttackState()?.step === 3 ? $any(gs.capitalAttackState()?.currentQuestion) : attackQuestion()"
       (captureAnswer)="onCaptureAnswer($event)"
       (attackAnswer)="onAttackAnswer($event)"
       (attackClose)="onAttackClose()"
@@ -207,6 +207,11 @@ export class GameGrid {
   }
 
   onCaptureAnswer(answerIndex: number) {
+    if (this.gs.capitalAttackState()) {
+      this.gs.resolveCapitalStep(this.gs.currentPlayer(), answerIndex);
+      return;
+    }
+
     const q = this.gs.captureQuestion();
     const cellId = this.gs.pendingCellId();
     if (!q || cellId === null) return;

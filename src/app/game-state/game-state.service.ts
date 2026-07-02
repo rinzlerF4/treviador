@@ -38,7 +38,7 @@ export interface CapitalAttackState {
 
 @Injectable({ providedIn: 'root' })
 export class GameStateService {
-  readonly GRID_SIZE = 6;
+  readonly GRID_SIZE = 2;
   readonly TOTAL_CELLS = this.GRID_SIZE * this.GRID_SIZE;
 
   // ── Core state ──────────────────────────────────────────
