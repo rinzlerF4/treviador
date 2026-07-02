@@ -16,18 +16,9 @@ export class PusherService {
       window.history.replaceState({}, '', `?room=${roomId}`);
     }
 
-    this.pusher = new Pusher('69bc9629d7ee161329fd', {
+    this.pusher = new (Pusher as any)('69bc9629d7ee161329fd', {
       cluster: 'eu',
-      authEndpoint: '/api/auth'
-    });    // Используем presence- канал
-    this.channel = this.pusher.subscribe(`presence-triviador-${roomId}`);
-
-    this.channel.bind('pusher:subscription_succeeded', (members: any) => {
-      this.playersCount.set(members.count);
-      // Если я первый — я Игрок 1, иначе Игрок 2
-      if (!this.myPlayerNumber()) {
-        this.myPlayerNumber.set(members.count === 1 ? 1 : 2);
-      }
+      authEndpoint: window.location.origin + '/api/auth' // Добавили полный путь
     });
 
     this.channel.bind('pusher:member_added', (member: any) => {
